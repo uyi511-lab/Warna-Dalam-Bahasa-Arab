@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arabic Color Bowling – Petualangan Warna Bahasa Arab</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@500;700&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html{font-size:clamp(11px,min(1.5vw,2.3vh),28px)}
+body{margin:0;height:100vh;height:100dvh;overflow:hidden;font-family:'Baloo 2',system-ui,sans-serif;background:linear-gradient(#bfeaf5,#e6fbf1);color:#12324a}
+#app{height:100%;max-width:2400px;margin:0 auto;padding:.4rem .6rem;display:flex;flex-direction:column;gap:.35rem}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem}
+h1{margin:0;font-size:1.7rem;line-height:1.1}
+.sub{font-size:.85rem}
+.bar{display:flex;flex-wrap:wrap;gap:.4rem}
+button{font:inherit;font-size:1rem;font-weight:800;border:0;border-radius:.9rem;padding:.4rem .9rem;background:#1e88e5;color:#fff;cursor:pointer;box-shadow:0 .2rem 0 #0d5aa7;touch-action:manipulation}
+button:active{transform:translateY(2px);box-shadow:none}
+button:disabled{background:#9db4c4;box-shadow:none;cursor:default}
+button.g{background:#2e9e5b;box-shadow:0 .2rem 0 #1b6e3b}button.o{background:#f59e0b;box-shadow:0 .2rem 0 #b36d00}
+#hud{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:space-between;background:#fff;border-radius:1rem;padding:.2rem .8rem;font-weight:800;font-size:1rem}
+#dots{display:flex;gap:.2rem;align-items:center}
+.dot{width:.9rem;height:.9rem;border-radius:50%;background:#cfd8dc}.dot.cur{outline:.2rem solid #f59e0b}.dot.ok{background:#2e9e5b}.dot.no{background:#e53935}.sep{width:.5rem}
+#qp{background:#fff8d6;border:.2rem solid #ffd54f;border-radius:1.1rem;padding:.3rem .9rem;text-align:center;font-size:1.5rem;font-weight:800;line-height:1.25}
+#qp small{display:block;font-size:.8rem;color:#8a6d00;line-height:1.1}
+.ar{font-family:'Noto Naskh Arabic',serif;direction:rtl;unicode-bidi:isolate;font-size:1.4em}
+#stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#wrap{position:relative;border-radius:1rem;overflow:hidden;box-shadow:0 .4rem 1.2rem #0003;background:#a5d6ef;width:100%}
+canvas#cv{display:block;width:100%;height:100%;touch-action:none}
+#camBox{position:absolute;right:.5rem;bottom:.5rem;width:16%;min-width:80px;border:.2rem solid #fff;border-radius:.7rem;overflow:hidden;display:none;background:#000}
+#camBox video,#camBox canvas{width:100%;display:block;transform:scaleX(-1)}
+#camBox canvas{position:absolute;left:0;top:0;height:100%}
+#ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#0b2a4066;padding:.5rem}
+.card{background:#fff;border-radius:1.2rem;padding:.8rem 1.2rem;max-width:36rem;width:100%;max-height:98%;overflow:auto;text-align:center;box-shadow:0 .5rem 2rem #0006;font-size:1rem}
+.card h2{margin:0 0 .3rem;font-size:1.5rem}.card p{margin:.3rem 0}.big{font-size:2.6rem}
+.sw{display:inline-block;width:2.4rem;height:2.4rem;border-radius:.6rem;border:.2rem solid #12324a;vertical-align:middle}
+.rv{text-align:left;font-size:.9rem;border-top:1px solid #ddd;padding:.2rem 0}
+#status{font-size:.95rem;text-align:center;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;font-size:.85rem}
+.chips span{background:#fff;border-radius:999px;padding:.1rem .6rem}
+.rot{display:none;text-align:center;font-size:.9rem;background:#fff3cd;border-radius:.6rem;padding:.2rem}
+@media (orientation:portrait) and (max-width:800px){.rot{display:block}html{font-size:clamp(11px,3.4vw,20px)}h1{font-size:1.3rem}.sub{display:none}}
+@media (max-height:560px){.sub,.chips,#qp small{display:none}h1{font-size:1.2rem}#qp{font-size:1.3rem;padding:.15rem .6rem}#status{font-size:.8rem}}
+@media (max-height:400px){#hud{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+<div><h1>🎳 Arabic Color Bowling</h1><div class="sub">Petualangan Warna Bahasa Arab • Bahasa Arab Kelas IV SD</div></div>
+<div class="bar">
+<button id="bCam" class="o">📷 Aktifkan Kamera</button>
+<button id="bStart" class="g">▶ Mulai</button>
+<button id="bPause" disabled>⏸ Jeda</button>
+<button id="bReset">↺ Ulangi</button>
+</div>
+</header>
+<div class="rot">📱 Putar HP ke mode mendatar (landscape) agar arena lebih besar.</div>
+<div id="hud"><span id="mis"></span><span id="dots"></span><span id="sc"></span></div>
+<div id="qp">Tekan Mulai atau tunjukkan telapak tangan ✋</div>
+<div id="stage"><div id="wrap">
+<canvas id="cv" width="960" height="560"></canvas>
+<div id="camBox"><video id="vid" playsinline muted></video><canvas id="mini"></canvas></div>
+<div id="ov"></div>
+</div></div>
+<div id="status">Kamera belum aktif – kamu bisa bermain dengan sentuhan/klik.</div>
+<div class="chips"><span>✋ Telapak terbuka: mulai / lanjut</span><span>☝️ Telunjuk kiri-kanan: arahkan bola</span><span>☝️ Naik-turun: kekuatan</span><span>✊ Kepalkan: lempar bola</span><span>✋ Tahan 1,5 dtk: jeda</span><span>👆 Sentuh lintasan: arahkan &amp; lepas</span></div>
+</div>
+<script type="module">
+const $=id=>document.getElementById(id),cl=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+// [soal, pilihan, kunci, arab, arti, transliterasi, warna]
+const Q=[
+["Apa bahasa Arab dari warna <b>merah</b>?",["أَحْمَرُ","أَزْرَقُ","أَصْفَرُ","أَخْضَرُ"],0,"أَحْمَرُ","Merah","Ahmaru","#e53935"],
+["Apa arti kata <b class=ar>أَزْرَقُ</b>?",["Hijau","Biru","Merah","Putih"],1,"أَزْرَقُ","Biru","Azraqu","#1e88e5"],
+["Warna <b>kuning</b> dalam bahasa Arab adalah ....",["أَسْوَدُ","أَبْيَضُ","أَصْفَرُ","أَحْمَرُ"],2,"أَصْفَرُ","Kuning","Asfaru","#fdd835"],
+["Apa arti kata <b class=ar>أَخْضَرُ</b>?",["Hijau","Hitam","Jingga","Ungu"],0,"أَخْضَرُ","Hijau","Akhdharu","#43a047"],
+["Bahasa Arab dari warna <b>putih</b> adalah ....",["أَزْرَقُ","أَبْيَضُ","أَسْوَدُ","أَصْفَرُ"],1,"أَبْيَضُ","Putih","Abyadhu","#ffffff"],
+["Kata <b class=ar>أَسْوَدُ</b> berarti ....",["Merah","Putih","Hitam","Kuning"],2,"أَسْوَدُ","Hitam","Aswadu","#212121"],
+["Warna <b>jingga atau oranye</b> dalam bahasa Arab adalah ....",["بُرْتُقَالِيٌّ","وَرْدِيٌّ","بُنِّيٌّ","رَمَادِيٌّ"],0,"بُرْتُقَالِيٌّ","Jingga/Oranye","Burtuqāliyyun","#fb8c00"],
+["Apa arti kata <b class=ar>وَرْدِيٌّ</b>?",["Cokelat","Merah muda","Abu-abu","Ungu"],1,"وَرْدِيٌّ","Merah muda","Wardiyyun","#f48fb1"],
+["Bahasa Arab dari warna <b>cokelat</b> adalah ....",["بَنَفْسَجِيٌّ","رَمَادِيٌّ","بُنِّيٌّ","وَرْدِيٌّ"],2,"بُنِّيٌّ","Cokelat","Bunniyyun","#795548"],
+["Kata <b class=ar>بَنَفْسَجِيٌّ</b> berarti ....",["Ungu","Hijau","Kuning","Biru"],0,"بَنَفْسَجِيٌّ","Ungu","Banafsajiyyun","#8e24aa"],
+["Apa arti kata <b class=ar>رَمَادِيٌّ</b>?",["Putih","Abu-abu","Merah","Jingga"],1,"رَمَادِيٌّ","Abu-abu","Ramādiyyun","#9e9e9e"],
+["Bahasa Arab dari warna <b>hijau muda</b> adalah ....",["أَخْضَرُ غَامِقٌ","أَزْرَقُ فَاتِحٌ","أَخْضَرُ فَاتِحٌ","أَزْرَقُ غَامِقٌ"],2,"أَخْضَرُ فَاتِحٌ","Hijau muda","Akhdharu fātihun","#9ccc65"],
+["Apa arti kata <b class=ar>أَزْرَقُ فَاتِحٌ</b>?",["Biru muda","Biru tua","Hijau tua","Hijau muda"],0,"أَزْرَقُ فَاتِحٌ","Biru muda","Azraqu fātihun","#81d4fa"],
+["Bahasa Arab dari warna <b>biru tua</b> adalah ....",["أَخْضَرُ فَاتِحٌ","أَزْرَقُ غَامِقٌ","أَزْرَقُ فَاتِحٌ","أَخْضَرُ غَامِقٌ"],1,"أَزْرَقُ غَامِقٌ","Biru tua","Azraqu ghāmiqu","#0d2a8a"],
+["Apa arti kata <b class=ar>أَخْضَرُ غَامِقٌ</b>?",["Hijau muda","Biru muda","Biru tua","Hijau tua"],3,"أَخْضَرُ غَامِقٌ","Hijau tua","Akhdharu ghāmiqu","#1b5e20"]];
+const MIS=["Misi 1 – Mengenal Warna","Misi 2 – Membaca Nama Warna Bahasa Arab","Misi 3 – Tantangan Mencocokkan Warna"];
+const L="ABCD",PLC=["#ffcdd2","#bbdefb","#fff9c4","#c8e6c9"];
+const cv=$('cv'),c=cv.getContext('2d'),W=960,H=560,ov=$('ov');
+const laneX=(u,y)=>{const t=(y-170)/370,l=160-100*t,r=800+100*t;return l+(r-l)*u};
+const rad=y=>9+(y-170)*.048;
+const cx=i=>laneX((i+.5)/4,235);
+let st='intro',prev='',qi=0,score=0,right=0,aim=.5,aimT=.5,pw=.6,powT=.6,ans=[],roll=null,pins=[],conf=[],fx=null,cd=0,resT=0,lastPoint=-9,fistT=0,palmT=0,sel=-1,res=null,handSeen=0;
+// ---------- audio
+let ac;function beep(f,d,tp='sine',v=.08){try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.type=tp;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.stop(ac.currentTime+d)}catch(e){}}
+// ---------- game flow
+function resetPins(){pins=[];for(let i=0;i<4;i++)[[0,25],[-26,-3],[26,-3]].forEach(([dx,dy],k)=>pins.push({g:i,k,x:cx(i)+dx,y:235+dy,fall:0,hit:false,delay:0,dir:dx<0?-1:dx>0?1:(Math.random()<.5?-1:1)}))}
+function hud(){$('mis').textContent=st==='intro'?'Siap bermain?':MIS[Math.min(2,Math.floor(qi/5))];$('sc').textContent=`Soal ${Math.min(qi+1,15)}/15 • Benar ${right} • Skor ${score}`;
+ let h='';for(let i=0;i<15;i++){h+=(i&&i%5==0?'<span class=sep></span>':'')+`<span class="dot ${i<ans.length?(ans[i]===Q[i][2]?'ok':'no'):i===qi&&st!=='intro'&&st!=='end'?'cur':''}"></span>`}$('dots').innerHTML=h}
+function showQ(){const q=Q[qi];$('qp').innerHTML=`<small>${MIS[Math.floor(qi/5)]} • Soal ${qi+1}</small>${q[0]}`;resetPins();sel=-1;res=null;roll=null;hide();hud()}
+function start(){score=0;right=0;qi=0;ans=[];st='aim';cd=.7;$('bPause').disabled=false;$('bPause').textContent='⏸ Jeda';showQ();beep(520,.15)}
+function card(h){ov.innerHTML=`<div class=card>${h}</div>`;ov.style.display='flex'}
+function hide(){ov.style.display='none'}
+function launch(u){if(st!=='aim')return;aim=aimT=cl(u??aim,0,1);sel=Math.min(3,Math.floor(aim*4));const sx=laneX(aim,490);roll={t:0,dur:1.5-.7*pw,sx,ex:cx(sel)+(aim*4-(sel+.5))*30};st='roll';cd=.7;beep(150,.5,'triangle',.1)}
+function impact(){const off=aim*4-(sel+.5),strike=Math.abs(off)<.2;res=strike?'STRIKE!':'SPARE!';
+ pins.filter(p=>p.g===sel).forEach(p=>{if(strike||p.k===0||(off>0?p.k===2:p.k===1)){p.hit=true;p.delay=p.k*.08}});
+ const ok=sel===Q[qi][2];ans.push(sel);if(ok){score+=100;right++;for(let i=0;i<70;i++)conf.push({x:cx(sel),y:230,vx:(Math.random()-.5)*420,vy:-Math.random()*420-80,col:`hsl(${Math.random()*360},90%,60%)`,t:2})}
+ fx={txt:res,t:1.4,ok};beep(ok?660:200,.4,ok?'sine':'sawtooth');if(ok)setTimeout(()=>beep(880,.3),160);st='result';resT=1.2;hud()}
+function feedback(){const q=Q[qi],ok=sel===q[2],last=qi===14,isAr=s=>/[\u0600-\u06FF]/.test(s);
+ const fm=s=>isAr(s)?`<span class=ar>${s}</span>`:s;
+ card(`<h2>${ok?'🎉 Benar! +100 poin':'😊 Belum tepat, 0 poin'}</h2><div>${res==='STRIKE!'?'🎳 Strike!':'🎳 Spare!'}</div>
+ ${ok?'':`<p>Jawabanmu: <b>${fm(q[1][sel])}</b></p>`}
+ <div class="ar big">${q[3]}</div><p><span class=sw style="background:${q[6]}"></span> <b>${q[4]}</b> • dibaca <i>${q[5]}</i></p>
+ <p style="font-size:.9rem">Jawaban benar: <b>${L[q[2]]}. ${fm(q[1][q[2]])}</b></p>
+ <button id="bNext" class=g>${last?'Lihat Hasil 🏆':'Soal Berikutnya ✋'}</button>`);
+ $('bNext').onclick=next;st='feedback';cd=.7;palmT=0}
+function next(){if(st!=='feedback')return;qi++;if(qi>=15){end();return}st='aim';cd=.7;showQ()}
+function end(){st='end';$('bPause').disabled=true;hud();$('qp').innerHTML='Permainan selesai! 🏆';
+ const msg=right>=13?'Hebat! Kamu semakin mahir mengenal warna dalam bahasa Arab!':right>=8?'Bagus! Ayo berlatih lagi supaya makin lancar!':'Semangat! Coba lagi, kamu pasti bisa!';
+ for(let i=0;i<120;i++)conf.push({x:Math.random()*W,y:-10,vx:(Math.random()-.5)*100,vy:Math.random()*200+60,col:`hsl(${Math.random()*360},90%,60%)`,t:4});
+ let rv='';Q.forEach((q,i)=>{const ok=ans[i]===q[2];rv+=`<div class=rv>${ok?'✅':'❌'} <b>${i+1}.</b> ${q[0].replace('....','...')}<br>→ <span class=ar>${q[3]}</span> = <b>${q[4]}</b> (${q[5]})</div>`});
+ card(`<h2>🏆 Skor Akhir: ${score} / 1500</h2><p>Jawaban benar: <b>${right}</b> dari 15</p><p><b>${msg}</b></p><button id="bAgain" class=g>🎳 Main Lagi</button><h3>Pembahasan</h3>${rv}`);$('bAgain').onclick=start;beep(784,.5)}
+function pause(){if(st==='aim'){prev=st;st='paused';$('bPause').textContent='▶ Lanjutkan';card('<h2>⏸ Jeda</h2><p>Tekan Lanjutkan atau tahan telapak tangan terbuka.</p><button id="bRes" class=g>▶ Lanjutkan</button>');$('bRes').onclick=pause;palmT=0}else if(st==='paused'){st='aim';cd=.7;$('bPause').textContent='⏸ Jeda';hide()}}
+$('bStart').onclick=()=>{ac=ac||new AudioContext();start()};$('bReset').onclick=()=>{ac=ac||new AudioContext();start()};$('bPause').onclick=pause;
+// ---------- touch / mouse
+let down=false;const px=e=>{const r=cv.getBoundingClientRect();return cl(((e.clientX-r.left)/r.width*W-160)/640,0,1)};
+cv.addEventListener('pointerdown',e=>{if(st==='aim'){down=true;aimT=px(e)}});
+cv.addEventListener('pointermove',e=>{if(down&&st==='aim')aimT=px(e)});
+addEventListener('pointerup',e=>{if(down){down=false;if(st==='aim'){aim=aimT;launch(aim)}}});
+// ---------- hand tracking
+let hl=null,cam=false;const vid=$('vid'),mini=$('mini'),mc=mini.getContext('2d');
+const CH=[[0,1,2,3,4],[0,5,6,7,8],[9,10,11,12],[13,14,15,16],[0,17,18,19,20],[5,9,13,17]];
+$('bCam').onclick=async()=>{
+ if(cam)return;const S=$('status');
+ if(!navigator.mediaDevices?.getUserMedia){S.textContent='Kamera tidak tersedia di browser ini (gunakan HTTPS/localhost). Mode sentuh tetap bisa dipakai.';return}
+ S.textContent='Meminta izin kamera…';
+ try{const s=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});vid.srcObject=s;await vid.play();cam=true;$('camBox').style.display='block';mini.width=640;mini.height=480;$('bCam').textContent='📷 Kamera Aktif';
+  S.textContent='Memuat deteksi tangan… (butuh internet)'}catch(e){S.textContent='Kamera ditolak/tidak ditemukan. Izinkan kamera atau gunakan mode sentuh.';return}
+ try{const m=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+  const fs=await m.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  const mk=d=>m.HandLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:d},runningMode:'VIDEO',numHands:1});
+  try{hl=await mk('GPU')}catch(e){hl=await mk('CPU')}
+  S.textContent='Letakkan tangan di depan kamera ✋'}catch(e){S.textContent='Deteksi tangan gagal dimuat. Mode sentuh tetap bisa dipakai.'}};
+let lastVT=-1;
+function track(dt){
+ if(!hl||vid.readyState<2||vid.currentTime===lastVT)return;lastVT=vid.currentTime;
+ const r=hl.detectForVideo(vid,performance.now());mc.clearRect(0,0,640,480);const S=$('status');
+ if(!r.landmarks.length){if(performance.now()-handSeen>400){S.textContent='🖐 Tangan belum terdeteksi – letakkan tangan di depan kamera';fistT=0;palmT=0}return}
+ handSeen=performance.now();const lm=r.landmarks[0];
+ mc.strokeStyle='#4dd0e1';mc.lineWidth=3;CH.forEach(ch=>{mc.beginPath();ch.forEach((n,i)=>{const p=lm[n];i?mc.lineTo(p.x*640,p.y*480):mc.moveTo(p.x*640,p.y*480)});mc.stroke()});
+ mc.fillStyle='#ffeb3b';lm.forEach(p=>{mc.beginPath();mc.arc(p.x*640,p.y*480,5,0,7);mc.fill()});
+ const d=(a,b)=>Math.hypot(lm[a].x-lm[b].x,lm[a].y-lm[b].y),ex=(t,p)=>d(t,0)>d(p,0)*1.08;
+ const i=ex(8,6),m=ex(12,10),rg=ex(16,14),k=ex(20,18);
+ const g=i&&m&&rg&&k?'open':!i&&!m&&!rg&&!k?'fist':i&&!m&&!rg&&!k?'point':'other';
+ S.textContent='✅ Tangan terdeteksi: '+({open:'✋ telapak terbuka',fist:'✊ kepalan',point:'☝️ menunjuk',other:'🖐 …'})[g];
+ const now=performance.now()/1000;
+ if(g==='point'&&st==='aim'){aimT=cl((1-lm[8].x-.2)/.6,0,1);powT=cl((.85-lm[8].y)/.6,.15,1);lastPoint=now}
+ fistT=g==='fist'?fistT+dt:0;palmT=g==='open'?palmT+dt:0;
+ if(cd>0)return;
+ if(st==='aim'&&fistT>.2&&now-lastPoint<1.5){launch(aimT);fistT=0}
+ else if(st==='intro'&&palmT>.6){start();palmT=0}
+ else if(st==='feedback'&&palmT>.6){next();palmT=0}
+ else if(st==='aim'&&palmT>1.5){pause();palmT=0;cd=.8}
+ else if(st==='paused'&&palmT>1){pause();palmT=0}}
+// ---------- drawing
+function pin(p){c.save();c.translate(p.x,p.y);const s=.9,e=p.fall*p.fall*(3-2*p.fall);c.fillStyle='#0003';c.beginPath();c.ellipse(0,2,14,4,0,0,7);c.fill();
+ c.rotate(p.dir*e*1.5);c.translate(0,-e*6);c.scale(s,s);c.globalAlpha=1-e*.25;
+ c.fillStyle='#fff';c.strokeStyle='#9aa7b3';c.lineWidth=1.5;
+ c.beginPath();c.ellipse(0,-20,12,21,0,0,7);c.fill();c.stroke();c.beginPath();c.ellipse(0,-42,6.5,9,0,0,7);c.fill();c.stroke();c.beginPath();c.arc(0,-52,7,0,7);c.fill();c.stroke();
+ c.fillStyle='#e53935';c.fillRect(-7,-44,14,4);c.fillRect(-8,-38,16,3);c.restore()}
+function ballAt(x,y,r){const g=c.createRadialGradient(x-r*.35,y-r*.4,r*.1,x,y,r);g.addColorStop(0,'#ff8ab3');g.addColorStop(1,'#c2185b');c.fillStyle='#0003';c.beginPath();c.ellipse(x+3,y+r*.9,r,r*.35,0,0,7);c.fill();c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill();c.fillStyle='#4a0d26';[[-.25,-.4],[.15,-.45],[-.05,-.1]].forEach(([a,b])=>{c.beginPath();c.arc(x+a*r,y+b*r,r*.12,0,7);c.fill()})}
+function draw(){
+ const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#7fd4f2');bg.addColorStop(.3,'#c8f2e2');bg.addColorStop(1,'#b8e8d5');c.fillStyle=bg;c.fillRect(0,0,W,H);
+ c.fillStyle='#ffe082';c.fillRect(0,150,W,24);
+ // gutters & lane
+ c.fillStyle='#37566e';c.beginPath();c.moveTo(laneX(0,170)-22,170);c.lineTo(laneX(1,170)+22,170);c.lineTo(laneX(1,540)+40,540);c.lineTo(laneX(0,540)-40,540);c.fill();
+ c.fillStyle='#f5d9a0';c.beginPath();c.moveTo(laneX(0,170),170);c.lineTo(laneX(1,170),170);c.lineTo(laneX(1,540),540);c.lineTo(laneX(0,540),540);c.fill();
+ c.strokeStyle='#d9b574';c.lineWidth=1;for(let i=1;i<10;i++){c.beginPath();c.moveTo(laneX(i/10,170),170);c.lineTo(laneX(i/10,540),540);c.stroke()}
+ for(let i=0;i<4;i++){const hl2=(st==='aim'&&i===Math.min(3,Math.floor(aim*4)))||(sel===i);c.fillStyle=hl2?'#fff59d99':'#ffffff22';c.beginPath();c.moveTo(laneX(i/4,170),170);c.lineTo(laneX((i+1)/4,170),170);c.lineTo(laneX((i+1)/4,540),540);c.lineTo(laneX(i/4,540),540);c.fill()}
+ c.strokeStyle='#fff';c.lineWidth=4;c.beginPath();c.moveTo(laneX(0,470),470);c.lineTo(laneX(1,470),470);c.stroke();
+ // plates
+ const q=Q[Math.min(qi,14)];
+ for(let i=0;i<4;i++){const x=cx(i),w=150,y=22,h=96;let col=PLC[i],bd='#fff';
+  if(st==='aim'&&i===Math.min(3,Math.floor(aim*4))){bd='#f59e0b'}
+  if(sel>=0&&(st==='result'||st==='feedback')){if(i===q[2]){col='#a5f3b5';bd='#2e9e5b'}else if(i===sel){col='#ffb4b4';bd='#e53935'}}
+  c.fillStyle='#0002';c.fillRect(x-w/2+3,y+4,w,h);c.fillStyle=col;c.strokeStyle=bd;c.lineWidth=bd==='#fff'?3:6;c.beginPath();c.roundRect(x-w/2,y,w,h,16);c.fill();c.stroke();
+  c.fillStyle='#12324a';c.beginPath();c.arc(x-w/2+18,y+18,13,0,7);c.fill();c.fillStyle='#fff';c.font='800 17px "Baloo 2"';c.textAlign='center';c.textBaseline='middle';c.fillText(L[i],x-w/2+18,y+19);
+  const t=st==='intro'?'?':q[1][i],ar=/[\u0600-\u06FF]/.test(t);c.fillStyle='#12324a';
+  if(ar){c.direction='rtl';c.font='700 '+(t.length>9?25:32)+'px "Noto Naskh Arabic"';c.fillText(t,x,y+58)}else{c.direction='ltr';c.font='800 '+(t.length>9?21:26)+'px "Baloo 2"';c.fillText(t,x,y+58)}c.direction='ltr'}
+ // pins
+ [...pins].sort((a,b)=>a.y-b.y).forEach(pin);
+ // aim guide
+ if(st==='aim'){const s=Math.min(3,Math.floor(aim*4)),bx=laneX(aim,490);c.setLineDash([10,10]);c.strokeStyle='#f59e0b';c.lineWidth=4;c.beginPath();c.moveTo(bx,470);c.lineTo(cx(s),262);c.stroke();c.setLineDash([]);ballAt(bx,490,rad(490))}
+ if(st==='roll'&&roll){const p=roll.t,x=lerp(roll.sx,roll.ex,p),y=lerp(490,262,p);ballAt(x,y,rad(y)*(1+.1*Math.sin(p*20)*0))}
+ // power
+ if(st==='aim'||st==='roll'){c.fillStyle='#fff';c.beginPath();c.roundRect(20,360,26,170,10);c.fill();c.fillStyle='#ef5350';const hh=170*pw;c.beginPath();c.roundRect(20,530-hh,26,hh,10);c.fill();c.fillStyle='#12324a';c.font='700 13px "Baloo 2"';c.textAlign='center';c.fillText('Kuat',33,350)}
+ // confetti
+ conf.forEach(p=>{c.fillStyle=p.col;c.fillRect(p.x,p.y,8,12)});
+ if(fx){c.globalAlpha=Math.min(1,fx.t);c.font='800 84px "Baloo 2"';c.textAlign='center';c.lineWidth=8;c.strokeStyle='#12324a';c.strokeText(fx.txt,W/2,330);c.fillStyle=fx.txt==='STRIKE!'?'#ffd54f':'#80deea';c.fillText(fx.txt,W/2,330);c.globalAlpha=1}}
+let last=performance.now();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+ if(cd>0)cd-=dt;try{track(dt)}catch(e){}
+ if(st==='aim'){aim=lerp(aim,aimT,Math.min(1,dt*10));pw=lerp(pw,powT,Math.min(1,dt*6))}
+ if(st==='roll'&&roll){roll.t+=dt/roll.dur;if(roll.t>=1){roll.t=1;impact()}}
+ pins.forEach(p=>{if(p.hit){if(p.delay>0)p.delay-=dt;else p.fall=Math.min(1,p.fall+dt*3.5)}});
+ if(st==='result'){resT-=dt;if(resT<=0)feedback()}
+ conf.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=500*dt;p.t-=dt});conf=conf.filter(p=>p.t>0&&p.y<H+20);
+ if(fx){fx.t-=dt;if(fx.t<=0)fx=null}
+ draw();requestAnimationFrame(loop)}
+const stage=$('stage'),wrapEl=$('wrap');
+function fit(){const r=stage.getBoundingClientRect();const w=Math.max(100,Math.min(r.width,r.height*960/560));wrapEl.style.width=w+'px';wrapEl.style.height=(w*560/960)+'px'}
+new ResizeObserver(fit).observe(stage);addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,200));fit();
+resetPins();hud();
+card(`<h2>🎳 Arabic Color Bowling</h2><p>Baca soal, arahkan bola ke pin jawaban yang benar, lalu lempar!</p>
+<p style="font-size:.9rem">Aktifkan kamera untuk bermain dengan gerakan tangan: ☝️ arahkan, ✊ lempar, ✋ mulai.<br>Tanpa kamera: sentuh/klik lintasan, geser, lalu lepas.</p>
+<button id="bGo" class=g>▶ Mulai</button>`);$('bGo').onclick=()=>{ac=ac||new AudioContext();start()};
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
